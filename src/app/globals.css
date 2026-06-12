@@ -1,26 +1,130 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --pitch-night: #0b1426;
+  --floodlight: #f4c430;
+  --pitch-line: #1b8f4e;
+  --chalk: #e8edf5;
+  --signal: #ff4757;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-pitch-night: var(--pitch-night);
+  --color-floodlight: var(--floodlight);
+  --color-pitch-line: var(--pitch-line);
+  --color-chalk: var(--chalk);
+  --color-signal: var(--signal);
+  --font-display: var(--font-barlow);
+  --font-sans: var(--font-ibm-plex);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--pitch-night);
+  color: var(--chalk);
+  font-family: var(--font-ibm-plex), system-ui, sans-serif;
+  min-height: 100dvh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(244, 196, 48, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(27, 143, 78, 0.06), transparent);
+  z-index: -1;
+}
+
+.font-display {
+  font-family: var(--font-barlow), system-ui, sans-serif;
+}
+
+.ticket-stub {
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ticket-perforation {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 6px,
+    rgba(244, 196, 48, 0.3) 6px,
+    rgba(244, 196, 48, 0.3) 8px
+  );
+  height: 3px;
+}
+
+.ticket-void::after {
+  content: "VOID";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-barlow), system-ui, sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: rgba(255, 71, 87, 0.12);
+  transform: rotate(-12deg);
+  pointer-events: none;
+  user-select: none;
+}
+
+.scoreboard {
+  text-shadow: 0 0 20px rgba(244, 196, 48, 0.15);
+}
+
+.live-ticket-border {
+  box-shadow:
+    0 0 0 1px rgba(255, 71, 87, 0.2),
+    0 4px 24px rgba(255, 71, 87, 0.08);
+}
+
+.login-stadium {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(244, 196, 48, 0.12), transparent),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(27, 143, 78, 0.04) 39px,
+      rgba(27, 143, 78, 0.04) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 39px,
+      rgba(27, 143, 78, 0.04) 39px,
+      rgba(27, 143, 78, 0.04) 40px
+    );
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes live-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.live-pulse {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.live-dot {
+  animation: live-dot 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WM26 — Freunde-Tippspiel
 
-## Getting Started
+Tippspiel für die FIFA WM 2026 (48 Teams, 104 Spiele). Freunde tippen exakte Ergebnisse, sammeln Punkte (2-3-4-System) und sehen fremde Tipps erst nach eigenem bestätigtem Tipp.
 
-First, run the development server:
+## Navigation
+
+- **Start** — Live-Spiele, offene Tipps, Rangliste
+- **Spiele** — Tippen, Nach Datum, Gruppentabellen, K.o.-Phasen
+- **Rangliste** — Gesamtwertung + Spielregeln
+
+## Stack
+
+- **Frontend:** Next.js 16 + Tailwind CSS v4
+- **Backend:** Supabase (Auth, PostgreSQL, RLS)
+- **Daten:** [worldcup26.ir](https://worldcup26.ir/get/games) (104 Spiele inkl. K.o.)
+- **Hosting:** Netlify (Cron alle 5 Min)
+
+## Spielregeln
+
+| Treffer | Punkte |
+|---------|--------|
+| Exaktes Ergebnis | 4 |
+| Richtige Tordifferenz | 3 |
+| Richtige Tendenz | 2 |
+
+- **Gruppenspiele:** Wertung nach 90 Minuten inkl. Nachspielzeit
+- **K.o.-Spiele:** Wertung nach 120 Minuten (90 + Verlängerung). Elfmeter entscheiden nur den Sieger — nicht als Tore im Tipp
+- Tipp-Deadline: Anstoß. Fremde Tipps sichtbar nach eigenem Tipp
+
+## Lokales Setup
+
+### 1. Umgebungsvariablen
+
+Kopiere `.env.example` nach `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- optional `CRON_SECRET`
+- optional `DATABASE_URL` (für Migrationen)
+
+### 2. Supabase Auth
+
+- Site URL: `http://localhost:3000`
+- Redirect URLs: `http://localhost:3000/**`
+- Email-Provider aktivieren
+
+### 3. Datenbank
+
+Mit `DATABASE_URL`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run db:setup
+npm run sync:results
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Manuell: Migrationen `001`–`005` in `supabase/migrations/` ausführen, oder nur `004_005_combined.sql` im SQL Editor wenn 001–003 schon laufen. Dann:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run sync:results   # alle 104 Spiele
+npm run db:setup       # Teams + Gruppenspiele seeden (Fallback)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. App starten
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+**Einladungscode:** `WM26-FREUNDE`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Sync & Live
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Produktion:** Netlify `sync-results` → `/api/cron/sync-results` alle 5 Min
+- **Lokal:** `npm run sync:results` (upsertet alle 104 Spiele + Ergebnisse)
+- **Live:** Nach Tipp erscheint Live-Stand (SSE, 30s Fallback)
 
-## Deploy on Vercel
+## Go-Live-Checkliste
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Migrationen 001–005 auf Supabase
+2. `npm run sync:results` → 104 Spiele in DB
+3. Netlify Env + `CRON_SECRET` + Supabase Redirect URL
+4. Gruppenspiel: Tippen → Freunde-Tipps → Live → Punkte
+5. K.o.-Spiel mit Platzhalter-Teams: sichtbar, Tippen gesperrt bis Teams bekannt
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Netlify Deploy
+
+1. Repo mit Netlify verbinden (Build: `npm run build`, Plugin: `@netlify/plugin-nextjs`)
+2. **Env-Variablen** in Netlify → Site configuration → Environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `CRON_SECRET` (empfohlen — schützt `/api/cron/sync-results`)
+3. Supabase Redirect URL: `https://deine-site.netlify.app/**`
+4. Nach erstem Deploy: Migration `004_005_combined.sql` in Supabase, dann einmalig Sync triggern (Scheduled Function läuft alle 5 Min)
+
+**Scheduled Function:** `netlify/functions/sync-results.mjs` ruft `/api/cron/sync-results` auf.
+

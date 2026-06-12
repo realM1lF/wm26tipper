@@ -6,14 +6,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:setup": "node scripts/setup-db.mjs",
+    "db:matches": "node scripts/build-matches.mjs",
+    "sync:results": "npx tsx scripts/sync-results.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.1",
+    "@tanstack/react-query": "^5.101.0",
+    "date-fns": "^4.4.0",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^17.4.2",
+    "framer-motion": "^12.40.0",
     "next": "16.2.9",
+    "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.11",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -21,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }

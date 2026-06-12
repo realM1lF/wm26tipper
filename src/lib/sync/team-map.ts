@@ -1,0 +1,70 @@
+/** Maps worldcup26.ir English team names → internal FIFA codes */
+const NAME_TO_CODE: Record<string, string> = {
+  Mexico: "MEX",
+  "South Africa": "RSA",
+  "South Korea": "KOR",
+  Korea: "KOR",
+  "Korea Republic": "KOR",
+  Czechia: "CZE",
+  "Czech Republic": "CZE",
+  Canada: "CAN",
+  "Bosnia and Herzegovina": "BIH",
+  USA: "USA",
+  "United States": "USA",
+  Paraguay: "PAR",
+  Haiti: "HAI",
+  Scotland: "SCO",
+  Australia: "AUS",
+  Türkiye: "TUR",
+  Turkey: "TUR",
+  Brazil: "BRA",
+  Morocco: "MAR",
+  Qatar: "QAT",
+  Switzerland: "SUI",
+  "Ivory Coast": "CIV",
+  "Côte d'Ivoire": "CIV",
+  Ecuador: "ECU",
+  Germany: "GER",
+  "Curaçao": "CUW",
+  Curacao: "CUW",
+  Netherlands: "NED",
+  Japan: "JPN",
+  Sweden: "SWE",
+  Tunisia: "TUN",
+  "Saudi Arabia": "KSA",
+  Uruguay: "URU",
+  Spain: "ESP",
+  "Cape Verde": "CPV",
+  "Cabo Verde": "CPV",
+  Iran: "IRN",
+  "New Zealand": "NZL",
+  Belgium: "BEL",
+  Egypt: "EGY",
+  France: "FRA",
+  Senegal: "SEN",
+  Iraq: "IRQ",
+  Norway: "NOR",
+  Argentina: "ARG",
+  Algeria: "ALG",
+  Austria: "AUT",
+  Jordan: "JOR",
+  Ghana: "GHA",
+  Panama: "PAN",
+  England: "ENG",
+  Croatia: "CRO",
+  Portugal: "POR",
+  "Congo DR": "COD",
+  "DR Congo": "COD",
+  Uzbekistan: "UZB",
+  Colombia: "COL",
+};
+
+export function resolveTeamCode(nameEn: string | null | undefined): string | null {
+  if (!nameEn?.trim()) return null;
+  const trimmed = nameEn.trim();
+  return NAME_TO_CODE[trimmed] ?? null;
+}
+
+export function isKnockoutStage(stage: string): boolean {
+  return stage !== "group";
+}
