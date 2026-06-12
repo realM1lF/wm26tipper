@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getScoringPair } from "@/lib/scoring/resolve-result";
+import { calculatePoints } from "@/lib/scoring/calculatePoints";
+import { formatResultDisplay } from "@/lib/utils";
 
 export async function GET(
   _request: Request,
@@ -25,6 +27,12 @@ export async function GET(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
+  const isFinished = match.status === "finished";
+  const scoring = getScoringPair(match);
+  const matchResult =
+    isFinished && scoring ? { home: scoring.home, away: scoring.away } : null;
+  const resultDisplay = isFinished ? formatResultDisplay(match) : null;
+
   const { data: myTip } = await supabase
     .from("tips")
     .select("id")
@@ -33,7 +41,13 @@ export async function GET(
     .maybeSingle();
 
   if (!myTip) {
-    return Response.json({ unlocked: false, tips: [], matchResult: null });
+    return Response.json({
+      unlocked: false,
+      isFinished,
+      tips: [],
+      matchResult: null,
+      resultDisplay: null,
+    });
   }
 
   const { data: tips } = await supabase
@@ -41,32 +55,56 @@ export async function GET(
     .select("*, profiles(*)")
     .eq("match_id", id);
 
-  const { data: points } = await supabase
+  const { data: ledger } = await supabase
     .from("points_ledger")
-    .select("*")
+    .select("user_id, points, breakdown")
     .eq("match_id", id);
 
-  const pointsMap = new Map(points?.map((p) => [p.user_id, p.points]) ?? []);
+  const ledgerMap = new Map(
+    ledger?.map((p) => [p.user_id, { points: p.points, breakdown: p.breakdown }]) ?? [],
+  );
 
-  const scoring = getScoringPair(match);
-  const matchResult =
-    match.status === "finished" && scoring
-      ? { home: scoring.home, away: scoring.away }
-      : null;
+  const mappedTips = (tips ?? []).map((t) => {
+    const profile = Array.isArray(t.profiles) ? t.profiles[0] : t.profiles;
+    const entry = ledgerMap.get(t.user_id);
+
+    let points: number | null = entry?.points ?? null;
+    let breakdown: string | null = entry?.breakdown ?? null;
+
+    if (matchResult && points == null) {
+      const calc = calculatePoints(
+        { home: t.home_score, away: t.away_score },
+        matchResult,
+      );
+      points = calc.points;
+      breakdown = calc.breakdown;
+    }
+
+    return {
+      id: t.id,
+      user_id: t.user_id,
+      home_score: t.home_score,
+      away_score: t.away_score,
+      profile,
+      points,
+      breakdown,
+    };
+  });
+
+  mappedTips.sort((a, b) => {
+    const pa = a.points ?? -1;
+    const pb = b.points ?? -1;
+    if (pb !== pa) return pb - pa;
+    const na = a.profile?.display_name ?? "";
+    const nb = b.profile?.display_name ?? "";
+    return na.localeCompare(nb, "de");
+  });
 
   return Response.json({
     unlocked: true,
-    tips: (tips ?? []).map((t) => {
-      const profile = Array.isArray(t.profiles) ? t.profiles[0] : t.profiles;
-      return {
-        id: t.id,
-        user_id: t.user_id,
-        home_score: t.home_score,
-        away_score: t.away_score,
-        profile,
-        points: pointsMap.get(t.user_id) ?? null,
-      };
-    }),
+    isFinished,
+    tips: mappedTips,
     matchResult,
+    resultDisplay,
   });
 }

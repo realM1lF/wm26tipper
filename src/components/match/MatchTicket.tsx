@@ -264,7 +264,7 @@ function StatusBadge({
   }
   if (match.status === "finished") {
     return (
-      <span className="rounded-full bg-chalk/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-chalk/60">
+      <span className="rounded-full bg-signal/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-signal">
         Beendet
       </span>
     );

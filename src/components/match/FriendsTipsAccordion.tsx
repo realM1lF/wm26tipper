@@ -8,6 +8,7 @@ import type { Tip, Profile } from "@/lib/types";
 type TipWithProfile = Tip & {
   profile?: Profile;
   points?: number | null;
+  breakdown?: string | null;
 };
 
 type Props = {
@@ -29,6 +30,8 @@ export function FriendsTipsAccordion({
   const [matchResult, setMatchResult] = useState<{ home: number; away: number } | null>(
     null,
   );
+  const [isFinished, setIsFinished] = useState(false);
+  const [resultDisplay, setResultDisplay] = useState<string | null>(null);
   const [fetched, setFetched] = useState(false);
 
   const loadTips = useCallback(async () => {
@@ -39,10 +42,14 @@ export function FriendsTipsAccordion({
       const data = await res.json();
       setTips(data.tips ?? []);
       setMatchResult(data.matchResult ?? null);
+      setIsFinished(!!data.isFinished);
+      setResultDisplay(data.resultDisplay ?? null);
       setFetched(true);
     } catch {
       setTips([]);
       setMatchResult(null);
+      setIsFinished(false);
+      setResultDisplay(null);
       setFetched(true);
     } finally {
       setLoading(false);
@@ -50,16 +57,18 @@ export function FriendsTipsAccordion({
   }, [matchId]);
 
   useEffect(() => {
-    if (open && hasTip) {
+    if (hasTip) {
       void loadTips();
     }
-  }, [open, hasTip, loadTips, refreshKey]);
+  }, [hasTip, loadTips, refreshKey]);
 
   useEffect(() => {
     if (!hasTip) {
       setFetched(false);
       setTips([]);
       setMatchResult(null);
+      setIsFinished(false);
+      setResultDisplay(null);
     }
   }, [hasTip]);
 
@@ -68,6 +77,12 @@ export function FriendsTipsAccordion({
   }
 
   const tipCount = hasTip && fetched ? tips.length : null;
+  const headerHint =
+    isFinished && resultDisplay && tipCount
+      ? `Endstand ${resultDisplay} · ${tipCount} Tipper`
+      : tipCount
+        ? `${tipCount} Tipper`
+        : null;
 
   return (
     <section className="mt-5 border-t border-chalk/10 pt-4 sm:mt-6">
@@ -77,11 +92,16 @@ export function FriendsTipsAccordion({
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 rounded-lg px-1 py-2 text-left transition-colors hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chalk/30"
       >
-        <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-chalk/50">
-          Freunde-Tipps
-        </span>
-        <span className="flex items-center gap-2">
-          {tipCount != null && tipCount > 0 && (
+        <div className="min-w-0 flex-1">
+          <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-chalk/50">
+            Freunde-Tipps
+          </span>
+          {headerHint && !open && (
+            <p className="mt-0.5 truncate text-[11px] text-chalk/35">{headerHint}</p>
+          )}
+        </div>
+        <span className="flex shrink-0 items-center gap-2">
+          {tipCount != null && tipCount > 0 && open && (
             <span className="rounded-full bg-chalk/10 px-2 py-0.5 text-[10px] tabular-nums text-chalk/45">
               {tipCount}
             </span>
@@ -118,6 +138,8 @@ export function FriendsTipsAccordion({
                 <FriendsTips
                   tips={tips}
                   currentUserId={currentUserId}
+                  isFinished={isFinished}
+                  resultDisplay={resultDisplay}
                   matchResult={matchResult}
                   embedded
                 />

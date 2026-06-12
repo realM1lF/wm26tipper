@@ -127,7 +127,7 @@ function StatusPill({
   }
   if (status === "finished") {
     return (
-      <span className="shrink-0 rounded-full bg-chalk/10 px-2.5 py-1 text-[10px] uppercase tracking-wider text-chalk/60">
+      <span className="shrink-0 rounded-full bg-signal/20 px-2.5 py-1 text-[10px] uppercase tracking-wider text-signal">
         Beendet
       </span>
     );
