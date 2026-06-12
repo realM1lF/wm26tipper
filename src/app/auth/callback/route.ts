@@ -10,6 +10,22 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const displayName =
+        typeof user?.user_metadata?.display_name === "string"
+          ? user.user_metadata.display_name.trim()
+          : "";
+
+      if (user && displayName.length >= 2) {
+        await supabase
+          .from("profiles")
+          .update({ display_name: displayName })
+          .eq("id", user.id);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

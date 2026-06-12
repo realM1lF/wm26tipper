@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,11 +16,19 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    const name = displayName.trim();
+    if (name.length < 2) {
+      setError("Name muss mindestens 2 Zeichen haben");
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { display_name: name },
       },
     });
     setLoading(false);
@@ -59,6 +68,22 @@ export default function LoginPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block">
+              <span className="text-xs uppercase tracking-widest text-chalk/40">
+                Dein Name
+              </span>
+              <input
+                type="text"
+                required
+                minLength={2}
+                maxLength={24}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Wie sollen dich Freunde sehen?"
+                autoComplete="nickname"
+                className="mt-1 w-full rounded-lg border border-chalk/10 bg-white/5 px-4 py-3 text-chalk placeholder:text-chalk/30 focus:border-floodlight/50 focus:outline-none"
+              />
+            </label>
             <label className="block">
               <span className="text-xs uppercase tracking-widest text-chalk/40">
                 E-Mail
