@@ -34,7 +34,7 @@ export function LiveTicket({ matchId, kickoffAt, myTip, enabled = true }: Props)
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
       className={cn(
-        "mt-4 overflow-hidden rounded-lg border bg-pitch-night/60",
+        "mt-4 overflow-hidden rounded-lg border bg-ticket-surface/60",
         isLive ? "live-ticket-border border-signal/30" : "border-chalk/10",
       )}
     >

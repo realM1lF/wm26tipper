@@ -98,7 +98,7 @@ export function MatchTicket({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "ticket-stub relative overflow-x-hidden rounded-xl border border-chalk/10 bg-pitch-night/80 backdrop-blur-sm p-4 sm:p-6",
+        "ticket-stub relative overflow-x-hidden rounded-xl border border-chalk/10 backdrop-blur-sm p-4 sm:p-6",
         locked && !hasTip && teamsReady && "ticket-void",
         match.status === "live" && "live-ticket-border",
       )}

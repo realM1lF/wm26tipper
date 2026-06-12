@@ -8,6 +8,7 @@
   --signal: #ff4757;
   --tip-open: #3b82f6;
   --tip-update: #e8862a;
+  --ticket-surface: #171f2f;
 }
 
 @theme inline {
@@ -18,6 +19,7 @@
   --color-signal: var(--signal);
   --color-tip-open: var(--tip-open);
   --color-tip-update: var(--tip-update);
+  --color-ticket-surface: var(--ticket-surface);
   --font-display: var(--font-barlow);
   --font-sans: var(--font-ibm-plex);
   --font-mono: var(--font-ibm-plex-mono);
@@ -46,6 +48,7 @@ body::before {
 }
 
 .ticket-stub {
+  background-color: var(--ticket-surface);
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
