@@ -26,6 +26,7 @@ export default async function RankingPage() {
             <ul className="mt-2 space-y-1 text-xs">
               <li>Exaktes Ergebnis → <strong className="text-pitch-line">4 Punkte</strong></li>
               <li>Richtige Tordifferenz → <strong className="text-pitch-line">3 Punkte</strong></li>
+              <li>Richtiges Unentschieden → <strong className="text-pitch-line">3 Punkte</strong></li>
               <li>Richtige Tendenz → <strong className="text-pitch-line">2 Punkte</strong></li>
             </ul>
           </div>
