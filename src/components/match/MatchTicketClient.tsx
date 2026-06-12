@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { MatchTicket } from "./MatchTicket";
 import { submitTip } from "@/lib/actions";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -9,11 +9,12 @@ import type { MatchWithTeams, Tip } from "@/lib/types";
 type Props = {
   match: MatchWithTeams;
   myTip?: Tip | null;
-  compact?: boolean;
+  currentUserId: string;
 };
 
-export function MatchTicketClient({ match, myTip, compact }: Props) {
+export function MatchTicketClient({ match, myTip, currentUserId }: Props) {
   const [pending, startTransition] = useTransition();
+  const [tipRevision, setTipRevision] = useState(0);
   const { toast } = useToast();
   const hadTip = !!myTip;
 
@@ -22,6 +23,7 @@ export function MatchTicketClient({ match, myTip, compact }: Props) {
       startTransition(async () => {
         try {
           await submitTip(match.id, home, away);
+          setTipRevision((r) => r + 1);
           toast(
             hadTip
               ? `Tipp aktualisiert: ${home}:${away}`
@@ -43,9 +45,10 @@ export function MatchTicketClient({ match, myTip, compact }: Props) {
     <MatchTicket
       match={match}
       myTip={myTip}
+      currentUserId={currentUserId}
       onSubmit={handleSubmit}
       loading={pending}
-      compact={compact}
+      tipRevision={tipRevision}
     />
   );
 }

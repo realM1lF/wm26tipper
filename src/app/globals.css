@@ -6,6 +6,8 @@
   --pitch-line: #1b8f4e;
   --chalk: #e8edf5;
   --signal: #ff4757;
+  --tip-open: #3b82f6;
+  --tip-update: #e8862a;
 }
 
 @theme inline {
@@ -14,6 +16,8 @@
   --color-pitch-line: var(--pitch-line);
   --color-chalk: var(--chalk);
   --color-signal: var(--signal);
+  --color-tip-open: var(--tip-open);
+  --color-tip-update: var(--tip-update);
   --font-display: var(--font-barlow);
   --font-sans: var(--font-ibm-plex);
   --font-mono: var(--font-ibm-plex-mono);

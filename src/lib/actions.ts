@@ -38,7 +38,6 @@ export async function submitTip(matchId: string, homeScore: number, awayScore: n
   if (error) throw new Error(error.message);
   revalidatePath("/matches");
   revalidatePath("/dashboard");
-  revalidatePath(`/matches/${matchId}`);
 }
 
 export type ActionResult =

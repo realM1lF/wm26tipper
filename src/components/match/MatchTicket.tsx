@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import type { MatchWithTeams, Tip } from "@/lib/types";
 import {
   formatKickoff,
@@ -17,21 +16,24 @@ import { useKickoffLock } from "@/hooks/useKickoffLock";
 import { ScoreStepper } from "./ScoreStepper";
 import { Button } from "@/components/ui/Button";
 import { LiveTicket } from "./LiveTicket";
+import { FriendsTipsAccordion } from "./FriendsTipsAccordion";
 
 type Props = {
   match: MatchWithTeams;
   myTip?: Tip | null;
+  currentUserId: string;
   onSubmit: (home: number, away: number) => Promise<void>;
   loading?: boolean;
-  compact?: boolean;
+  tipRevision?: number;
 };
 
 export function MatchTicket({
   match,
   myTip,
+  currentUserId,
   onSubmit,
   loading,
-  compact,
+  tipRevision = 0,
 }: Props) {
   const locked = useKickoffLock(match.kickoff_at);
   const teamsReady = matchTeamsReady(match);
@@ -43,8 +45,7 @@ export function MatchTicket({
   );
   const hasTip = !!myTip;
   const showLive =
-    !compact &&
-    (locked || match.status === "live" || match.status === "finished");
+    locked || match.status === "live" || match.status === "finished";
 
   useEffect(() => {
     setHome(myTip?.home_score ?? 0);
@@ -69,7 +70,7 @@ export function MatchTicket({
 
   const resultLine = formatResultDisplay(match);
 
-  const scoreArea = !compact && canTip ? (
+  const scoreArea = canTip ? (
     <div className="flex items-center justify-center gap-2 sm:gap-4 sm:px-2">
       <ScoreStepper value={home} onChange={setHome} disabled={!canTip} />
       <span className="font-display shrink-0 text-xl text-chalk/30 sm:text-2xl">:</span>
@@ -91,23 +92,12 @@ export function MatchTicket({
     </div>
   );
 
-  const compactActionLabel = !teamsReady
-    ? "Paarung ansehen"
-    : locked
-      ? "Live verfolgen"
-      : hasTip
-        ? "Details & Freunde-Tipps"
-        : "Jetzt tippen";
-
-  const compactIsTipAction = teamsReady && !locked && !hasTip;
-
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "ticket-stub relative overflow-x-hidden rounded-xl border border-chalk/10 bg-pitch-night/80 backdrop-blur-sm",
-        compact ? "p-4" : "p-4 sm:p-6",
+        "ticket-stub relative overflow-x-hidden rounded-xl border border-chalk/10 bg-pitch-night/80 backdrop-blur-sm p-4 sm:p-6",
         locked && !hasTip && teamsReady && "ticket-void",
         match.status === "live" && "live-ticket-border",
       )}
@@ -139,39 +129,33 @@ export function MatchTicket({
         </div>
       </header>
 
-      {/* Mobile: teams above, score centered below */}
       <div className="space-y-4 sm:hidden">
         <div className="grid grid-cols-2 gap-2">
           <TeamBlock
             team={match.home_team}
             label={match.home_team_label}
             align="left"
-            compact={compact}
           />
           <TeamBlock
             team={match.away_team}
             label={match.away_team_label}
             align="right"
-            compact={compact}
           />
         </div>
         {scoreArea}
       </div>
 
-      {/* Desktop: classic ticket row */}
       <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-3">
         <TeamBlock
           team={match.home_team}
           label={match.home_team_label}
           align="left"
-          compact={compact}
         />
         {scoreArea}
         <TeamBlock
           team={match.away_team}
           label={match.away_team_label}
           align="right"
-          compact={compact}
         />
       </div>
 
@@ -181,7 +165,7 @@ export function MatchTicket({
         </p>
       )}
 
-      {!compact && canTip && (
+      {canTip && (
         <footer className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-center text-xs leading-relaxed text-chalk/40 sm:text-left">
             {hasTip
@@ -189,7 +173,7 @@ export function MatchTicket({
               : "Tipps der anderen siehst du nach Bestätigung"}
           </p>
           <Button
-            variant="tip"
+            variant={hasTip ? "tipUpdate" : "tip"}
             onClick={() => onSubmit(home, away)}
             disabled={loading}
             className="w-full sm:w-auto"
@@ -199,7 +183,7 @@ export function MatchTicket({
         </footer>
       )}
 
-      {!compact && locked && !hasTip && match.status !== "finished" && teamsReady && (
+      {locked && !hasTip && match.status !== "finished" && teamsReady && (
         <footer className="mt-5 text-center text-xs text-signal/80 sm:mt-6">
           Anstoß — Tippen nicht mehr möglich
         </footer>
@@ -213,22 +197,12 @@ export function MatchTicket({
         />
       )}
 
-      {compact && (
-        <footer className="mt-4">
-          <Link
-            href={`/matches/${match.id}`}
-            className={cn(
-              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
-              compactIsTipAction
-                ? "bg-pitch-line text-white shadow-[0_0_20px_rgba(27,143,78,0.2)] hover:bg-pitch-line/90"
-                : "border border-chalk/10 bg-white/[0.03] text-chalk/70 hover:bg-white/[0.06]",
-            )}
-          >
-            {compactActionLabel}
-            <span aria-hidden>→</span>
-          </Link>
-        </footer>
-      )}
+      <FriendsTipsAccordion
+        matchId={match.id}
+        currentUserId={currentUserId}
+        hasTip={hasTip}
+        refreshKey={tipRevision}
+      />
     </motion.article>
   );
 }
@@ -237,12 +211,10 @@ function TeamBlock({
   team,
   label,
   align,
-  compact,
 }: {
   team: MatchWithTeams["home_team"];
   label?: string | null;
   align: "left" | "right";
-  compact?: boolean;
 }) {
   return (
     <div
@@ -251,13 +223,10 @@ function TeamBlock({
         align === "right" && "items-end text-right",
       )}
     >
-      <span className={cn("leading-none", compact ? "text-xl" : "text-2xl sm:text-2xl")}>
-        {team?.flag_emoji ?? "⚽"}
-      </span>
+      <span className="text-2xl leading-none">{team?.flag_emoji ?? "⚽"}</span>
       <span
         className={cn(
-          "font-display w-full font-semibold uppercase leading-tight tracking-wide text-chalk",
-          compact ? "text-[11px] sm:text-sm" : "text-xs sm:text-sm",
+          "font-display w-full text-xs font-semibold uppercase leading-tight tracking-wide text-chalk sm:text-sm",
           align === "right" ? "text-right" : "text-left",
         )}
       >
@@ -315,7 +284,7 @@ function StatusBadge({
     );
   }
   return (
-    <span className="rounded-full bg-pitch-line/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-pitch-line">
+    <span className="rounded-full bg-tip-open/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-tip-open">
       Tippen
     </span>
   );

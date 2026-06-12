@@ -21,6 +21,7 @@ import { GroupTableGrid } from "@/components/groups/GroupTable";
 type Props = {
   matches: MatchWithTeams[];
   tips: Tip[];
+  currentUserId: string;
   phase: TournamentPhase;
   groupStandings: GroupStanding[];
   filter?: string;
@@ -31,6 +32,7 @@ type Props = {
 export function MatchesView({
   matches,
   tips,
+  currentUserId,
   phase,
   groupStandings,
   filter,
@@ -129,7 +131,7 @@ export function MatchesView({
       {showGroups ? (
         <GroupTableGrid standings={groupStandings} />
       ) : view === "dates" ? (
-        <MatchdayTimeline matches={matches} tips={tips} />
+        <MatchdayTimeline matches={matches} tips={tips} currentUserId={currentUserId} />
       ) : (
         <>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -187,6 +189,7 @@ export function MatchesView({
                   key={match.id}
                   match={match}
                   myTip={tipMap.get(match.id) ?? null}
+                  currentUserId={currentUserId}
                 />
               ))
             )}

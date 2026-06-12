@@ -24,6 +24,7 @@ export default async function MatchesPage({
     <MatchesView
       matches={matches}
       tips={myTips}
+      currentUserId={user.id}
       phase={phase}
       groupStandings={groupStandings}
       filter={params.filter}

@@ -89,7 +89,7 @@ export default async function DashboardPage() {
                 key={match.id}
                 match={match}
                 myTip={tipMap.get(match.id) ?? null}
-                compact
+                currentUserId={user.id}
               />
             ))}
           </div>
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
                 key={match.id}
                 match={match}
                 myTip={tipMap.get(match.id) ?? null}
-                compact
+                currentUserId={user.id}
               />
             ))}
           </div>

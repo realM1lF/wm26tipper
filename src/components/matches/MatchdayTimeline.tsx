@@ -8,9 +8,10 @@ import { MatchTicketClient } from "@/components/match/MatchTicketClient";
 type Props = {
   matches: MatchWithTeams[];
   tips: Tip[];
+  currentUserId: string;
 };
 
-export function MatchdayTimeline({ matches, tips }: Props) {
+export function MatchdayTimeline({ matches, tips, currentUserId }: Props) {
   const tipMap = useMemo(
     () => new Map(tips.map((t) => [t.match_id, t])),
     [tips],
@@ -87,7 +88,7 @@ export function MatchdayTimeline({ matches, tips }: Props) {
             key={match.id}
             match={match}
             myTip={tipMap.get(match.id) ?? null}
-            compact
+            currentUserId={currentUserId}
           />
         ))}
       </div>

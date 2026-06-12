@@ -1,12 +1,14 @@
 import { cn } from "@/lib/utils";
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "tip";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "tip" | "tipUpdate";
 
 const variants: Record<Variant, string> = {
   primary:
     "bg-floodlight text-pitch-night hover:bg-floodlight/90 shadow-[0_0_24px_rgba(244,196,48,0.25)] focus-visible:outline-floodlight",
   tip: "bg-pitch-line text-white hover:bg-pitch-line/90 shadow-[0_0_24px_rgba(27,143,78,0.25)] focus-visible:outline-pitch-line",
+  tipUpdate:
+    "border border-tip-update bg-transparent text-tip-update hover:bg-tip-update/10 focus-visible:outline-tip-update",
   secondary:
     "bg-pitch-line/20 text-chalk border border-pitch-line/40 hover:bg-pitch-line/30 focus-visible:outline-pitch-line",
   ghost: "text-chalk/70 hover:text-chalk hover:bg-white/5 focus-visible:outline-chalk/50",
