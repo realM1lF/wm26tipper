@@ -55,6 +55,7 @@ const NAME_TO_CODE: Record<string, string> = {
   Portugal: "POR",
   "Congo DR": "COD",
   "DR Congo": "COD",
+  "Democratic Republic of the Congo": "COD",
   Uzbekistan: "UZB",
   Colombia: "COL",
 };

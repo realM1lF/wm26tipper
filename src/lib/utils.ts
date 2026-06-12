@@ -103,7 +103,23 @@ export function formatResultDisplay(match: {
   ) {
     return `${base} · ${match.pen_home}:${match.pen_away} i.E.`;
   }
+  if (match.decided_by === "penalties") {
+    return `${base} · i.E.`;
+  }
+  if (match.decided_by === "extra_time") {
+    return `${base} · n.V.`;
+  }
   return base;
+}
+
+/** Deutsche Kurzform für K.o.-Platzhalter aus der API */
+export function formatTeamPlaceholder(label: string | null | undefined): string | null {
+  if (!label?.trim()) return null;
+  return label
+    .trim()
+    .replace(/^Winner Group (.+)$/i, "Sieger Gr. $1")
+    .replace(/^Runner-up Group (.+)$/i, "2. Gr. $1")
+    .replace(/^3rd Group (.+)$/i, "3. Gr. $1");
 }
 
 export function isKnockoutMatch(stage: string) {

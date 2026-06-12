@@ -7,6 +7,7 @@ import {
   formatKickoff,
   kickoffCountdown,
   formatResultDisplay,
+  formatTeamPlaceholder,
   isKnockoutMatch,
   matchHeaderLabel,
   cn,
@@ -230,7 +231,9 @@ function TeamBlock({
           align === "right" ? "text-right" : "text-left",
         )}
       >
-        <span className="line-clamp-2 break-words">{team?.name ?? label ?? "TBD"}</span>
+        <span className="line-clamp-2 break-words">
+          {team?.name ?? formatTeamPlaceholder(label) ?? label ?? "TBD"}
+        </span>
       </span>
     </div>
   );

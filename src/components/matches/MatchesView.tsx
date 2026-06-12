@@ -5,10 +5,11 @@ import Link from "next/link";
 import type { MatchWithTeams, Tip } from "@/lib/types";
 import type { GroupStanding } from "@/lib/groups/standings";
 import type { TournamentPhase } from "@/lib/tournament/phase";
-import { KNOCKOUT_STAGES } from "@/lib/tournament/phase";
+import { KNOCKOUT_STAGES, showGroupsTab } from "@/lib/tournament/phase";
 import {
   isMatchLiveOrPending,
   isTipLocked,
+  isKnockoutMatch,
   matchTeamsReady,
   sortMatchesByPriority,
   stageLabel,
@@ -107,6 +108,8 @@ export function MatchesView({
         : "Turnier beendet";
 
   const showGroups = view === "groups";
+  const hasKnockoutMatches = matches.some((m) => isKnockoutMatch(m.stage));
+  const showKoStages = hasKnockoutMatches;
 
   return (
     <div className="space-y-6">
@@ -123,7 +126,7 @@ export function MatchesView({
       <div className="flex flex-wrap gap-2">
         <ViewTab href="/matches" active={!showGroups && view !== "dates"} label="Übersicht" />
         <ViewTab href="/matches?view=dates" active={view === "dates"} label="Nach Datum" />
-        {groupStandings.length > 0 && (
+        {groupStandings.length > 0 && showGroupsTab(phase) && (
           <ViewTab href="/matches?view=groups" active={showGroups} label="Gruppen" />
         )}
       </div>
@@ -151,7 +154,7 @@ export function MatchesView({
             ))}
           </div>
 
-          {phase !== "group_stage" && (
+          {showKoStages && (
             <div className="flex gap-2 overflow-x-auto pb-1">
               {KNOCKOUT_STAGES.map((s) => (
                 <Link

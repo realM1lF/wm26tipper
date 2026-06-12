@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import type { Tip } from "@/lib/types";
 import { projectPoints } from "@/lib/scoring";
-import { kickoffCountdown, cn } from "@/lib/utils";
+import { kickoffCountdown, formatResultDisplay, cn } from "@/lib/utils";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
 import { TensionMeter } from "./TensionMeter";
 
@@ -66,9 +66,13 @@ export function LiveTicket({ matchId, kickoffAt, myTip, enabled = true }: Props)
           ) : isFinished ? (
             <div className="mt-1">
               <p className="scoreboard font-mono text-2xl font-bold tabular-nums text-chalk">
-                {liveHome}
-                <span className="mx-1.5 text-chalk/30">:</span>
-                {liveAway}
+                {formatResultDisplay({
+                  home_score: liveHome,
+                  away_score: liveAway,
+                  decided_by: data!.decided_by,
+                  pen_home: data!.pen_home,
+                  pen_away: data!.pen_away,
+                }) ?? `${liveHome}:${liveAway}`}
                 <span className="ml-2 text-xs font-normal uppercase text-chalk/40">
                   Endstand
                 </span>

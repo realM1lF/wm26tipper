@@ -18,10 +18,12 @@ export function getTournamentPhase(
   const allDone = matches.every((m) => m.status === "finished");
 
   if (allDone) return "finished";
-  if (allGroupDone && koMatches.some((m) => m.status !== "finished")) {
+
+  // K.o.-Phase: Gruppe fertig oder nur K.o.-Spiele in der DB
+  if (koMatches.length > 0 && (allGroupDone || groupMatches.length === 0)) {
     return "knockout";
   }
-  if (allGroupDone) return "knockout";
+
   return "group_stage";
 }
 

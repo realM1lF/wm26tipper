@@ -26,12 +26,31 @@ export type SyncMetrics = {
 
 function buildMatchRow(
   game: ExternalGame,
-  existing?: Partial<ScoringFields> | null,
+  existing?: Partial<ScoringFields> & {
+    live_elapsed?: string | null;
+    home_team_label?: string | null;
+    away_team_label?: string | null;
+  } | null,
 ) {
   const homeCode = resolveTeamCode(game.home_team_name_en);
   const awayCode = resolveTeamCode(game.away_team_name_en);
   const kickoffAt = parseApiKickoff(game.local_date);
   const patch = mapGameToUpdate(game, kickoffAt, homeCode, awayCode);
+
+  if (!patch.home_team_label && existing?.home_team_label) {
+    patch.home_team_label = existing.home_team_label;
+  }
+  if (!patch.away_team_label && existing?.away_team_label) {
+    patch.away_team_label = existing.away_team_label;
+  }
+
+  const elapsedForScoring =
+    patch.status === "finished" &&
+    (patch.live_elapsed === "FT" || patch.live_elapsed === "finished") &&
+    existing?.live_elapsed &&
+    !/^ft$/i.test(existing.live_elapsed.trim())
+      ? existing.live_elapsed
+      : patch.live_elapsed;
 
   const scoring =
     patch.status === "finished" &&
@@ -42,7 +61,7 @@ function buildMatchRow(
           status: patch.status,
           home_score: patch.home_score,
           away_score: patch.away_score,
-          live_elapsed: patch.live_elapsed,
+          live_elapsed: elapsedForScoring,
           existing,
         })
       : {
@@ -74,7 +93,7 @@ export async function syncMatchResults(): Promise<SyncMetrics> {
     const { data: existing } = await supabase
       .from("matches")
       .select(
-        "id, status, home_score, away_score, scoring_home, scoring_away, decided_by, pen_home, pen_away",
+        "id, status, home_score, away_score, scoring_home, scoring_away, decided_by, pen_home, pen_away, live_elapsed, home_team_label, away_team_label",
       )
       .eq("fifa_match_id", fifaId)
       .maybeSingle();

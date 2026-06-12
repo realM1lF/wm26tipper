@@ -6,6 +6,9 @@ export type LiveData = {
   status: "scheduled" | "live" | "finished";
   home_score: number | null;
   away_score: number | null;
+  decided_by?: string | null;
+  pen_home?: number | null;
+  pen_away?: number | null;
   live_elapsed: string | null;
   kickoff_at: string;
   points: number | null;
