@@ -18,7 +18,11 @@ export default function JoinPage() {
     setLoading(true);
     setError("");
     try {
-      await joinLeague(code);
+      const result = await joinLeague(code);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Fehler beim Beitreten");

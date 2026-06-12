@@ -41,27 +41,77 @@ export async function submitTip(matchId: string, homeScore: number, awayScore: n
   revalidatePath(`/matches/${matchId}`);
 }
 
-export async function joinLeague(inviteCode: string) {
+export type ActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function joinLeague(inviteCode: string): Promise<ActionResult> {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { ok: false, error: "Server-Konfiguration unvollständig (Service Role Key)" };
+  }
+
   const supabase = await createClient();
   const service = await createServiceClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Nicht angemeldet");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: league, error: le } = await service
+  if (!user) return { ok: false, error: "Nicht angemeldet" };
+
+  const code = inviteCode.trim().toUpperCase();
+  if (!code) return { ok: false, error: "Bitte Einladungscode eingeben" };
+
+  // Liga anlegen falls noch keine existiert (z. B. frisches Supabase-Projekt)
+  await ensureDefaultLeague();
+
+  const { data: profile } = await service
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    const displayName =
+      typeof user.user_metadata?.display_name === "string"
+        ? user.user_metadata.display_name.trim()
+        : user.email?.split("@")[0] ?? "Spieler";
+
+    const { error: profileError } = await service.from("profiles").insert({
+      id: user.id,
+      display_name: displayName,
+      avatar_color: "#F4C430",
+    });
+
+    if (profileError) {
+      return { ok: false, error: "Profil konnte nicht angelegt werden" };
+    }
+  }
+
+  const { data: league, error: leagueError } = await service
     .from("leagues")
     .select("id")
-    .eq("invite_code", inviteCode.toUpperCase())
-    .single();
+    .eq("invite_code", code)
+    .maybeSingle();
 
-  if (le || !league) throw new Error("Ungültiger Einladungscode");
+  if (leagueError) {
+    return { ok: false, error: "Liga konnte nicht geladen werden" };
+  }
+
+  if (!league) {
+    return { ok: false, error: "Ungültiger Einladungscode" };
+  }
 
   const { error } = await service.from("league_members").upsert(
     { league_id: league.id, user_id: user.id, role: "member" },
     { onConflict: "league_id,user_id" },
   );
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { ok: false, error: "Beitritt fehlgeschlagen — bitte erneut versuchen" };
+  }
+
   revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 export async function updateProfile(displayName: string, avatarColor: string) {
@@ -79,6 +129,8 @@ export async function updateProfile(displayName: string, avatarColor: string) {
 }
 
 export async function ensureDefaultLeague() {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+
   const service = await createServiceClient();
   const { data } = await service
     .from("leagues")
