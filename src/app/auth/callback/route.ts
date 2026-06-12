@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getMembership } from "@/lib/queries";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/join";
 
   if (code) {
     const supabase = await createClient();
@@ -14,19 +14,11 @@ export async function GET(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const displayName =
-        typeof user?.user_metadata?.display_name === "string"
-          ? user.user_metadata.display_name.trim()
-          : "";
-
-      if (user && displayName.length >= 2) {
-        await supabase
-          .from("profiles")
-          .update({ display_name: displayName })
-          .eq("id", user.id);
+      if (user) {
+        const membership = await getMembership(user.id);
+        const next = membership ? "/dashboard" : "/join";
+        return NextResponse.redirect(`${origin}${next}`);
       }
-
-      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 

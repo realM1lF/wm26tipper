@@ -45,6 +45,19 @@ Kopiere `.env.example` nach `.env.local`:
 - Redirect URLs: `http://localhost:3000/**`
 - Email-Provider aktivieren
 
+**Custom SMTP (Pflicht für ~20–30 Freunde):** Supabase-Standard-SMTP erlaubt nur wenige E-Mails pro Stunde und oft nur an Team-Mitglieder. Für die Freunde-Liga unbedingt Custom SMTP einrichten:
+
+1. Supabase → **Authentication → SMTP Settings** → Custom SMTP aktivieren  
+   Empfohlen: [Resend](https://resend.com) (Free Tier reicht für ~30 Registrierungen + Re-Logins)
+   - Host: `smtp.resend.com`, Port: `465`, User: `resend`, Passwort: Resend-API-Key
+   - Absender: verifizierte Domain, z. B. `WM26 <noreply@deine-domain.de>`
+2. Supabase → **Authentication → Rate Limits** → E-Mail-Limit auf **100/h** (oder höher) setzen  
+   (Nach Custom SMTP ist der Default oft nur 30/h — bei gleichzeitiger Anmeldung mehrerer Freunde zu wenig.)
+3. Produktion: Redirect URL `https://deine-site.netlify.app/**` eintragen
+
+**Login-Flow:** Registrieren (Name + E-Mail) → Magic Link → Liga beitreten.  
+Auf neuem Gerät: **Einloggen** (gleiche E-Mail + Name) → neuer Magic Link → direkt ins Dashboard.
+
 ### 3. Datenbank
 
 Mit `DATABASE_URL`:
