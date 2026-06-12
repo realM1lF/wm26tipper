@@ -7,6 +7,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Supabase URL/anon key are intentionally public (NEXT_PUBLIC_*)
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 [functions."sync-results"]
   schedule = "*/5 * * * *"

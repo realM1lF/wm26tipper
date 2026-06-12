@@ -12,6 +12,7 @@
     "sync:results": "npx tsx scripts/sync-results.ts"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "@tanstack/react-query": "^5.101.0",
