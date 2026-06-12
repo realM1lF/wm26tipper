@@ -61,7 +61,7 @@ export default async function DashboardPage() {
         {openCount > 0 ? (
           <Link
             href="/matches?filter=open"
-            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-floodlight/30 bg-floodlight/10 px-4 py-2.5 text-sm font-medium text-floodlight transition-colors hover:bg-floodlight/15"
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-pitch-line px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_20px_rgba(27,143,78,0.2)] transition-colors hover:bg-pitch-line/90"
           >
             {openCount} {openCount === 1 ? "Spiel wartet" : "Spiele warten"} auf deinen Tipp
             <span aria-hidden>→</span>

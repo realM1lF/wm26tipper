@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import type { Tip } from "@/lib/types";
 import { projectPoints } from "@/lib/scoring";
-import { formatCountdownToKickoff, cn } from "@/lib/utils";
+import { kickoffCountdown, cn } from "@/lib/utils";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
 import { TensionMeter } from "./TensionMeter";
 
@@ -81,7 +81,7 @@ export function LiveTicket({ matchId, kickoffAt, myTip, enabled = true }: Props)
             </div>
           ) : (
             <p className="mt-1 text-xs text-chalk/50">
-              Ab Anstoß live · {formatCountdownToKickoff(data?.kickoff_at ?? kickoffAt)}
+              Ab Anstoß live · Anstoß {kickoffCountdown(data?.kickoff_at ?? kickoffAt)}
             </p>
           )}
         </div>

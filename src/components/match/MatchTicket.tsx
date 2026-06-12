@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { MatchWithTeams, Tip } from "@/lib/types";
 import {
   formatKickoff,
-  formatCountdownToKickoff,
+  kickoffCountdown,
   formatResultDisplay,
   isKnockoutMatch,
   matchHeaderLabel,
@@ -38,6 +38,9 @@ export function MatchTicket({
   const canTip = teamsReady && !locked;
   const [home, setHome] = useState(myTip?.home_score ?? 0);
   const [away, setAway] = useState(myTip?.away_score ?? 0);
+  const [kickoffLabel, setKickoffLabel] = useState(() =>
+    locked ? "Anstoß war" : kickoffCountdown(match.kickoff_at),
+  );
   const hasTip = !!myTip;
   const showLive =
     !compact &&
@@ -48,36 +51,80 @@ export function MatchTicket({
     setAway(myTip?.away_score ?? 0);
   }, [myTip?.home_score, myTip?.away_score]);
 
+  useEffect(() => {
+    const update = () => {
+      setKickoffLabel(
+        locked ? "Anstoß war" : kickoffCountdown(match.kickoff_at),
+      );
+    };
+    update();
+    if (locked) return;
+    const id = window.setInterval(update, 30_000);
+    return () => window.clearInterval(id);
+  }, [locked, match.kickoff_at]);
+
   const ticketSerial = match.fifa_match_id
     ? `#${String(match.fifa_match_id).padStart(3, "0")}`
     : null;
 
   const resultLine = formatResultDisplay(match);
 
+  const scoreArea = !compact && canTip ? (
+    <div className="flex items-center justify-center gap-2 sm:gap-4 sm:px-2">
+      <ScoreStepper value={home} onChange={setHome} disabled={!canTip} />
+      <span className="font-display shrink-0 text-xl text-chalk/30 sm:text-2xl">:</span>
+      <ScoreStepper value={away} onChange={setAway} disabled={!canTip} />
+    </div>
+  ) : (
+    <div className="font-display text-center text-2xl font-bold tabular-nums text-chalk sm:text-3xl">
+      {hasTip ? (
+        <span>
+          {myTip!.home_score}
+          <span className="mx-1 text-chalk/30">:</span>
+          {myTip!.away_score}
+        </span>
+      ) : match.status === "finished" && resultLine ? (
+        <span className="text-xl sm:text-2xl">{resultLine}</span>
+      ) : (
+        <span className="text-chalk/30">– : –</span>
+      )}
+    </div>
+  );
+
+  const compactActionLabel = !teamsReady
+    ? "Paarung ansehen"
+    : locked
+      ? "Live verfolgen"
+      : hasTip
+        ? "Details & Freunde-Tipps"
+        : "Jetzt tippen";
+
+  const compactIsTipAction = teamsReady && !locked && !hasTip;
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "ticket-stub relative overflow-hidden rounded-xl border border-chalk/10 bg-pitch-night/80 backdrop-blur-sm",
-        compact ? "p-4" : "p-6",
+        "ticket-stub relative overflow-x-hidden rounded-xl border border-chalk/10 bg-pitch-night/80 backdrop-blur-sm",
+        compact ? "p-4" : "p-4 sm:p-6",
         locked && !hasTip && teamsReady && "ticket-void",
         match.status === "live" && "live-ticket-border",
       )}
     >
       <div className="ticket-perforation absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-floodlight/60 to-transparent" />
 
-      <header className="mb-4 flex items-start justify-between gap-3">
+      <header className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-floodlight/80">
             {matchHeaderLabel(match)}
           </p>
-          <p className="mt-1 text-xs text-chalk/50">
-            {formatKickoff(match.kickoff_at)} ·{" "}
-            {locked ? "Anstoß war" : formatCountdownToKickoff(match.kickoff_at)}
+          <p className="mt-1 text-xs text-chalk/60">{formatKickoff(match.kickoff_at)}</p>
+          <p className="mt-0.5 text-[11px] text-chalk/40">
+            {locked ? "Anstoß war" : `Anstoß ${kickoffLabel}`}
           </p>
           {isKnockoutMatch(match.stage) && teamsReady && !locked && (
-            <p className="mt-1 text-[10px] text-chalk/35">
+            <p className="mt-1 text-[10px] leading-snug text-chalk/35">
               Wertung nach 90 Min + Verlängerung
             </p>
           )}
@@ -92,54 +139,57 @@ export function MatchTicket({
         </div>
       </header>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      {/* Mobile: teams above, score centered below */}
+      <div className="space-y-4 sm:hidden">
+        <div className="grid grid-cols-2 gap-2">
+          <TeamBlock
+            team={match.home_team}
+            label={match.home_team_label}
+            align="left"
+            compact={compact}
+          />
+          <TeamBlock
+            team={match.away_team}
+            label={match.away_team_label}
+            align="right"
+            compact={compact}
+          />
+        </div>
+        {scoreArea}
+      </div>
+
+      {/* Desktop: classic ticket row */}
+      <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-3">
         <TeamBlock
           team={match.home_team}
           label={match.home_team_label}
           align="left"
+          compact={compact}
         />
-        {!compact && canTip ? (
-          <div className="flex items-center gap-4 px-2">
-            <ScoreStepper value={home} onChange={setHome} disabled={!canTip} />
-            <span className="font-display text-2xl text-chalk/30">:</span>
-            <ScoreStepper value={away} onChange={setAway} disabled={!canTip} />
-          </div>
-        ) : (
-          <div className="font-display text-center text-3xl font-bold tabular-nums text-chalk">
-            {hasTip ? (
-              <span>
-                {myTip!.home_score}
-                <span className="mx-1 text-chalk/30">:</span>
-                {myTip!.away_score}
-              </span>
-            ) : match.status === "finished" && resultLine ? (
-              <span className="text-2xl">{resultLine}</span>
-            ) : (
-              <span className="text-chalk/30">– : –</span>
-            )}
-          </div>
-        )}
+        {scoreArea}
         <TeamBlock
           team={match.away_team}
           label={match.away_team_label}
           align="right"
+          compact={compact}
         />
       </div>
 
       {!teamsReady && !locked && (
-        <p className="mt-4 rounded-lg border border-dashed border-chalk/10 bg-white/[0.02] px-3 py-2 text-center text-xs text-chalk/45">
+        <p className="mt-4 rounded-lg border border-dashed border-chalk/10 bg-white/[0.02] px-3 py-2 text-center text-xs leading-relaxed text-chalk/45">
           Teams stehen noch fest — Tippen ab Bekanntgabe der Paarung
         </p>
       )}
 
       {!compact && canTip && (
-        <footer className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-chalk/40">
+        <footer className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-center text-xs leading-relaxed text-chalk/40 sm:text-left">
             {hasTip
               ? "Tipp gespeichert — änderbar bis Anstoß"
               : "Tipps der anderen siehst du nach Bestätigung"}
           </p>
           <Button
+            variant="tip"
             onClick={() => onSubmit(home, away)}
             disabled={loading}
             className="w-full sm:w-auto"
@@ -150,7 +200,7 @@ export function MatchTicket({
       )}
 
       {!compact && locked && !hasTip && match.status !== "finished" && teamsReady && (
-        <footer className="mt-6 text-center text-xs text-signal/80">
+        <footer className="mt-5 text-center text-xs text-signal/80 sm:mt-6">
           Anstoß — Tippen nicht mehr möglich
         </footer>
       )}
@@ -164,18 +214,18 @@ export function MatchTicket({
       )}
 
       {compact && (
-        <footer className="mt-3">
+        <footer className="mt-4">
           <Link
             href={`/matches/${match.id}`}
-            className="text-xs font-medium text-floodlight hover:underline"
+            className={cn(
+              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
+              compactIsTipAction
+                ? "bg-pitch-line text-white shadow-[0_0_20px_rgba(27,143,78,0.2)] hover:bg-pitch-line/90"
+                : "border border-chalk/10 bg-white/[0.03] text-chalk/70 hover:bg-white/[0.06]",
+            )}
           >
-            {!teamsReady
-              ? "Paarung ansehen →"
-              : locked
-                ? "Live verfolgen →"
-                : hasTip
-                  ? "Details & Freunde-Tipps →"
-                  : "Jetzt tippen →"}
+            {compactActionLabel}
+            <span aria-hidden>→</span>
           </Link>
         </footer>
       )}
@@ -187,16 +237,31 @@ function TeamBlock({
   team,
   label,
   align,
+  compact,
 }: {
   team: MatchWithTeams["home_team"];
   label?: string | null;
   align: "left" | "right";
+  compact?: boolean;
 }) {
   return (
-    <div className={cn("flex flex-col gap-1", align === "right" && "items-end text-right")}>
-      <span className="text-2xl">{team?.flag_emoji ?? "⚽"}</span>
-      <span className="font-display text-sm font-semibold uppercase tracking-wide text-chalk">
-        {team?.name ?? label ?? "TBD"}
+    <div
+      className={cn(
+        "flex min-w-0 flex-col gap-0.5 sm:gap-1",
+        align === "right" && "items-end text-right",
+      )}
+    >
+      <span className={cn("leading-none", compact ? "text-xl" : "text-2xl sm:text-2xl")}>
+        {team?.flag_emoji ?? "⚽"}
+      </span>
+      <span
+        className={cn(
+          "font-display w-full font-semibold uppercase leading-tight tracking-wide text-chalk",
+          compact ? "text-[11px] sm:text-sm" : "text-xs sm:text-sm",
+          align === "right" ? "text-right" : "text-left",
+        )}
+      >
+        <span className="line-clamp-2 break-words">{team?.name ?? label ?? "TBD"}</span>
       </span>
     </div>
   );
@@ -250,7 +315,7 @@ function StatusBadge({
     );
   }
   return (
-    <span className="rounded-full bg-floodlight/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-floodlight">
+    <span className="rounded-full bg-pitch-line/20 px-2 py-0.5 text-[10px] uppercase tracking-wider text-pitch-line">
       Tippen
     </span>
   );

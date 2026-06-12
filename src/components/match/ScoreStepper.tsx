@@ -18,18 +18,18 @@ export function ScoreStepper({ value, onChange, disabled, label }: Props) {
           {label}
         </span>
       )}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <motion.button
           type="button"
           whileTap={{ scale: 0.92 }}
           disabled={disabled || value <= 0}
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-chalk/10 bg-white/5 text-lg text-chalk hover:border-floodlight/40 disabled:opacity-30"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-chalk/10 bg-white/5 text-base text-chalk hover:border-pitch-line/40 disabled:opacity-30 sm:h-10 sm:w-10 sm:text-lg"
           aria-label="Tor abziehen"
         >
           −
         </motion.button>
-        <span className="font-display min-w-[2.5rem] text-center text-4xl font-bold tabular-nums text-floodlight">
+        <span className="font-display min-w-[2rem] text-center text-3xl font-bold tabular-nums text-floodlight sm:min-w-[2.5rem] sm:text-4xl">
           {value}
         </span>
         <motion.button
@@ -37,7 +37,7 @@ export function ScoreStepper({ value, onChange, disabled, label }: Props) {
           whileTap={{ scale: 0.92 }}
           disabled={disabled || value >= 9}
           onClick={() => onChange(Math.min(9, value + 1))}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-chalk/10 bg-white/5 text-lg text-chalk hover:border-floodlight/40 disabled:opacity-30"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-chalk/10 bg-white/5 text-base text-chalk hover:border-pitch-line/40 disabled:opacity-30 sm:h-10 sm:w-10 sm:text-lg"
           aria-label="Tor dazu"
         >
           +
