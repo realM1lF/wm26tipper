@@ -39,24 +39,30 @@ Kopiere `.env.example` nach `.env.local`:
 - optional `CRON_SECRET`
 - optional `DATABASE_URL` (für Migrationen)
 
-### 2. Supabase Auth
+### 2. Supabase Auth (Google Login)
 
-- Site URL: `http://localhost:3000`
-- Redirect URLs: `http://localhost:3000/**`
-- Email-Provider aktivieren
+Login läuft über **Google OAuth** — kein E-Mail-Versand, kein SMTP nötig.
 
-**Custom SMTP (Pflicht für ~20–30 Freunde):** Supabase-Standard-SMTP erlaubt nur wenige E-Mails pro Stunde und oft nur an Team-Mitglieder. Für die Freunde-Liga unbedingt Custom SMTP einrichten:
+**Supabase → Authentication → URL Configuration**
 
-1. Supabase → **Authentication → SMTP Settings** → Custom SMTP aktivieren  
-   Empfohlen: [Resend](https://resend.com) (Free Tier reicht für ~30 Registrierungen + Re-Logins)
-   - Host: `smtp.resend.com`, Port: `465`, User: `resend`, Passwort: Resend-API-Key
-   - Absender: verifizierte Domain, z. B. `WM26 <noreply@deine-domain.de>`
-2. Supabase → **Authentication → Rate Limits** → E-Mail-Limit auf **100/h** (oder höher) setzen  
-   (Nach Custom SMTP ist der Default oft nur 30/h — bei gleichzeitiger Anmeldung mehrerer Freunde zu wenig.)
-3. Produktion: Redirect URL `https://deine-site.netlify.app/**` eintragen
+- Site URL: `https://wmtip.netlify.app` (lokal: `http://localhost:3000`)
+- Redirect URLs: `https://wmtip.netlify.app/**` und `http://localhost:3000/**`
 
-**Login-Flow:** Registrieren (Name + E-Mail) → Magic Link → Liga beitreten.  
-Auf neuem Gerät: **Einloggen** (gleiche E-Mail + Name) → neuer Magic Link → direkt ins Dashboard.
+**Google Cloud Console** ([console.cloud.google.com](https://console.cloud.google.com))
+
+1. OAuth consent screen → External → App-Name „WM26“
+2. Credentials → OAuth Client ID → Web application
+3. Authorized JavaScript origins: `https://wmtip.netlify.app`, `http://localhost:3000`
+4. Authorized redirect URIs: `https://DEIN-PROJEKT.supabase.co/auth/v1/callback`
+
+**Supabase → Authentication → Sign In / Providers → Google**
+
+- Enable → Client ID + Client Secret aus Google eintragen → Save
+
+**Login-Flow:** Mit Google anmelden → Liga-Code `WM26-FREUNDE` → Dashboard.  
+Funktioniert auf allen Geräten ohne Bestätigungslink.
+
+Migration `006_google_display_name.sql` im Supabase SQL Editor ausführen (Google-Namen im Profil).
 
 ### 3. Datenbank
 

@@ -4,14 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { INVITE_CODE } from "@/lib/data/teams";
-import {
-  findUserByEmail,
-  mapAuthError,
-  normalizeDisplayName,
-  normalizeEmail,
-} from "@/lib/auth-helpers";
-
-export type AuthMode = "login" | "register";
+import { displayNameFromUser } from "@/lib/auth";
 
 export async function submitTip(matchId: string, homeScore: number, awayScore: number) {
   const supabase = await createClient();
@@ -78,10 +71,7 @@ export async function joinLeague(inviteCode: string): Promise<ActionResult> {
     .maybeSingle();
 
   if (!profile) {
-    const displayName =
-      typeof user.user_metadata?.display_name === "string"
-        ? user.user_metadata.display_name.trim()
-        : user.email?.split("@")[0] ?? "Spieler";
+    const displayName = displayNameFromUser(user);
 
     const { error: profileError } = await service.from("profiles").insert({
       id: user.id,
@@ -158,78 +148,4 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
-}
-
-export async function requestMagicLink(
-  email: string,
-  displayName: string,
-  mode: AuthMode,
-  origin: string,
-): Promise<ActionResult> {
-  const normalizedEmail = normalizeEmail(email);
-  const normalizedName = normalizeDisplayName(displayName);
-
-  if (!normalizedEmail.includes("@")) {
-    return { ok: false, error: "Bitte eine gültige E-Mail eingeben" };
-  }
-
-  if (normalizedName.length < 2) {
-    return { ok: false, error: "Name muss mindestens 2 Zeichen haben" };
-  }
-
-  if (!origin.startsWith("http")) {
-    return { ok: false, error: "Ungültige Anfrage" };
-  }
-
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return { ok: false, error: "Server-Konfiguration unvollständig (Service Role Key)" };
-  }
-
-  const service = await createServiceClient();
-  const existingUser = await findUserByEmail(service, normalizedEmail);
-
-  if (mode === "register") {
-    if (existingUser) {
-      return {
-        ok: false,
-        error: "Diese E-Mail ist bereits registriert. Bitte unter „Einloggen“ anmelden.",
-      };
-    }
-  } else {
-    if (!existingUser) {
-      return { ok: false, error: "E-Mail oder Name stimmen nicht." };
-    }
-
-    const { data: profile } = await service
-      .from("profiles")
-      .select("display_name")
-      .eq("id", existingUser.id)
-      .maybeSingle();
-
-    const storedName =
-      profile?.display_name?.trim() ??
-      (typeof existingUser.user_metadata?.display_name === "string"
-        ? existingUser.user_metadata.display_name.trim()
-        : "");
-
-    if (normalizeDisplayName(storedName) !== normalizedName) {
-      return { ok: false, error: "E-Mail oder Name stimmen nicht." };
-    }
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email: normalizedEmail,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback`,
-      shouldCreateUser: mode === "register",
-      data: mode === "register" ? { display_name: displayName.trim() } : undefined,
-    },
-  });
-
-  if (error) {
-    return { ok: false, error: mapAuthError(error.message) };
-  }
-
-  return { ok: true };
 }
