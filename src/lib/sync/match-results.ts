@@ -7,6 +7,7 @@ import {
 } from "./external-api";
 import { parseApiKickoff } from "./kickoff";
 import { resolveTeamCode } from "./team-map";
+import seedMatches from "../../../supabase/seed/matches.json";
 
 function createServiceClient() {
   return createClient(
@@ -16,6 +17,19 @@ function createServiceClient() {
   );
 }
 
+type SeedMatchRow = {
+  fifa_match_id: number;
+  home_team_code: string;
+  away_team_code: string;
+};
+
+const SEED_TEAMS_BY_FIFA = new Map(
+  (seedMatches as SeedMatchRow[]).map((m) => [
+    m.fifa_match_id,
+    { home: m.home_team_code, away: m.away_team_code },
+  ]),
+);
+
 export type SyncMetrics = {
   total: number;
   created: number;
@@ -24,14 +38,36 @@ export type SyncMetrics = {
   unknownTeams: string[];
 };
 
+type ExistingMatch = Partial<ScoringFields> & {
+  live_elapsed?: string | null;
+  home_team_label?: string | null;
+  away_team_label?: string | null;
+  home_team_code?: string | null;
+  away_team_code?: string | null;
+};
+
+function preserveTeamCodes(
+  patch: { home_team_code: string | null; away_team_code: string | null },
+  existing?: ExistingMatch | null,
+  fifaId?: number,
+) {
+  const seed = fifaId != null ? SEED_TEAMS_BY_FIFA.get(fifaId) : undefined;
+
+  if (!patch.home_team_code) {
+    patch.home_team_code =
+      existing?.home_team_code ?? seed?.home ?? null;
+  }
+  if (!patch.away_team_code) {
+    patch.away_team_code =
+      existing?.away_team_code ?? seed?.away ?? null;
+  }
+}
+
 function buildMatchRow(
   game: ExternalGame,
-  existing?: Partial<ScoringFields> & {
-    live_elapsed?: string | null;
-    home_team_label?: string | null;
-    away_team_label?: string | null;
-  } | null,
+  existing?: ExistingMatch | null,
 ) {
+  const fifaId = parseInt(game.id, 10);
   const homeCode = resolveTeamCode(game.home_team_name_en);
   const awayCode = resolveTeamCode(game.away_team_name_en);
   const kickoffAt = parseApiKickoff(game.local_date);
@@ -43,6 +79,8 @@ function buildMatchRow(
   if (!patch.away_team_label && existing?.away_team_label) {
     patch.away_team_label = existing.away_team_label;
   }
+
+  preserveTeamCodes(patch, existing, fifaId);
 
   const elapsedForScoring =
     patch.status === "finished" &&
@@ -93,14 +131,14 @@ export async function syncMatchResults(): Promise<SyncMetrics> {
     const { data: existing } = await supabase
       .from("matches")
       .select(
-        "id, status, home_score, away_score, scoring_home, scoring_away, decided_by, pen_home, pen_away, live_elapsed, home_team_label, away_team_label",
+        "id, status, home_score, away_score, scoring_home, scoring_away, decided_by, pen_home, pen_away, live_elapsed, home_team_label, away_team_label, home_team_code, away_team_code",
       )
       .eq("fifa_match_id", fifaId)
       .maybeSingle();
 
     const { patch, homeCode, awayCode, scoring } = buildMatchRow(game, existing);
 
-    if (homeCode && awayCode) metrics.teamsResolved++;
+    if (patch.home_team_code && patch.away_team_code) metrics.teamsResolved++;
     if (game.home_team_name_en && !homeCode) {
       metrics.unknownTeams.push(game.home_team_name_en);
     }

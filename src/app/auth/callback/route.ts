@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getMembership } from "@/lib/queries";
-import { displayNameFromUser, shouldRefreshDisplayName } from "@/lib/auth";
+import { ensureUserProfile } from "@/lib/profile";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -16,26 +16,9 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const service = await createServiceClient();
-        const { data: profile } = await service
-          .from("profiles")
-          .select("display_name")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        const displayName = displayNameFromUser(user);
-
-        if (!profile) {
-          await service.from("profiles").insert({
-            id: user.id,
-            display_name: displayName,
-            avatar_color: "#F4C430",
-          });
-        } else if (shouldRefreshDisplayName(profile.display_name, user)) {
-          await service
-            .from("profiles")
-            .update({ display_name: displayName })
-            .eq("id", user.id);
+        const profileResult = await ensureUserProfile(user);
+        if (!profileResult.ok) {
+          return NextResponse.redirect(`${origin}/login?error=profile`);
         }
 
         const membership = await getMembership(user.id);

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { INVITE_CODE } from "@/lib/data/teams";
-import { displayNameFromUser } from "@/lib/auth";
+import { ensureUserProfile } from "@/lib/profile";
 
 export async function submitTip(matchId: string, homeScore: number, awayScore: number) {
   const supabase = await createClient();
@@ -64,24 +64,9 @@ export async function joinLeague(inviteCode: string): Promise<ActionResult> {
   // Liga anlegen falls noch keine existiert (z. B. frisches Supabase-Projekt)
   await ensureDefaultLeague();
 
-  const { data: profile } = await service
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile) {
-    const displayName = displayNameFromUser(user);
-
-    const { error: profileError } = await service.from("profiles").insert({
-      id: user.id,
-      display_name: displayName,
-      avatar_color: "#F4C430",
-    });
-
-    if (profileError) {
-      return { ok: false, error: "Profil konnte nicht angelegt werden" };
-    }
+  const profileResult = await ensureUserProfile(user);
+  if (!profileResult.ok) {
+    return { ok: false, error: profileResult.error };
   }
 
   const { data: league, error: leagueError } = await service

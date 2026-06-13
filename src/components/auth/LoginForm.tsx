@@ -9,11 +9,19 @@ type LoginFormProps = {
   authError?: string;
 };
 
+function loginErrorMessage(code?: string) {
+  if (code === "auth") {
+    return "Anmeldung fehlgeschlagen — bitte erneut versuchen.";
+  }
+  if (code === "profile") {
+    return "Profil konnte nicht angelegt werden — bitte erneut anmelden.";
+  }
+  return "";
+}
+
 export function LoginForm({ authError }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(
-    authError === "auth" ? "Anmeldung fehlgeschlagen — bitte erneut versuchen." : "",
-  );
+  const [error, setError] = useState(() => loginErrorMessage(authError));
 
   async function handleGoogleSignIn() {
     setLoading(true);

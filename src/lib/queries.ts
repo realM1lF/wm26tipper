@@ -24,7 +24,7 @@ export async function getProfile(userId: string) {
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   return data;
 }
 
@@ -131,13 +131,6 @@ export async function getRanking(): Promise<RankingRow[]> {
   if (!members?.length) return [];
 
   const { data: points } = await supabase.from("points_ledger").select("*");
-  const { data: tips } = await supabase.from("tips").select("user_id, home_score, away_score, match_id");
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("id, home_score, away_score, scoring_home, scoring_away, status")
-    .eq("status", "finished");
-
-  const matchMap = new Map(matches?.map((m) => [m.id, m]) ?? []);
 
   const totals = new Map<string, { points: number; exact: number }>();
   for (const m of members) {
@@ -146,17 +139,10 @@ export async function getRanking(): Promise<RankingRow[]> {
 
   for (const p of points ?? []) {
     const t = totals.get(p.user_id);
-    if (t) t.points += p.points;
-  }
-
-  for (const tip of tips ?? []) {
-    const match = matchMap.get(tip.match_id);
-    if (!match) continue;
-    const rh = match.scoring_home ?? match.home_score;
-    const ra = match.scoring_away ?? match.away_score;
-    if (rh === tip.home_score && ra === tip.away_score) {
-      const t = totals.get(tip.user_id);
-      if (t) t.exact += 1;
+    if (!t) continue;
+    t.points += p.points;
+    if (p.breakdown === "Exaktes Ergebnis") {
+      t.exact += 1;
     }
   }
 
